@@ -36,6 +36,9 @@ async function worker(from, action) {
         return false;
       result = "" + parseInt(result) / parseInt(sizing);
       break;
+    case "x^":
+      result = "" + Math.pow(parseInt(result),parseInt(sizing));
+      break;
     case "+/-":
       result = result[0] === "-" ? result.substring(1) : `-${result}`;
       break;
@@ -45,6 +48,20 @@ async function worker(from, action) {
       break;
     case "reverse":
       result = Array.from(result).reverse().join("");
+      break;
+    case "mirror":
+      result = result + Array.from(result).reverse().join("");
+      break;
+    case "shift":
+      let is_below = result[0] === "-"
+      if(is_below) result = result.substring(1)
+      if (sizing === "<") 
+        result = result.substring(1)+result[0];
+      else if (sizing === ">")
+        result = result.substring(result.length-1)+result.substring(0,result.length-1)
+      else 
+        return false;
+      result = (is_below? "-":"")+result;
       break;
     case "sum":
       result =
@@ -64,6 +81,8 @@ async function worker(from, action) {
       }
       return false;
   }
+
+  if (result.length>6) return false;
   return "" + parseInt(result);
 }
 function generateButtonCalls() {
@@ -193,14 +212,14 @@ async function waitForInput() {
 
       if (
         elm.length === 1 &&
-        (["reverse", "+/-", "<<", "sum"].includes(elm[0]) ||
+        (["reverse", "+/-", "<<", "sum", "mirror"].includes(elm[0]) ||
           /^[0-9]+$/.test(elm[0]))
       ) {
         memory.buttons.push(input);
       } else if (
         elm.length === 2 &&
-        ["+", "-", "*", "x", "/"].includes(elm[0]) &&
-        /^-?[0-9]+$/.test(elm[1])
+        ["+", "-", "*", "x", "/", "x^", "shift"].includes(elm[0]) &&
+        (/^-?[0-9]+$/.test(elm[1]) || /^(<|>)$/.test(elm[1]))
       ) {
         memory.buttons.push(input);
       } else if (
@@ -222,7 +241,7 @@ async function waitForInput() {
         printAsSystem(
           "Founded those first available solutions (max 5) for current result:"
         );
-        printArray(memory.pathes[input].slice(0, 5));
+        printArray(memory.pathes[input].slice(0, 5).map(e=>e+` [${e.split(' ===> ').length}]`));
       } else {
         printAsSystem(
           "Cannot found any suitable solutions for current result."
